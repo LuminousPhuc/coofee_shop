@@ -29,11 +29,12 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $allowedRoles = implode(',', array_keys(config('roles', [])));
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'role' => 'required|string|in:admin,user',
+            'role' => 'required|string|in:' . $allowedRoles,
         ]);
 
         $this->userService->createUser($data);
@@ -48,11 +49,12 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $allowedRoles = implode(',', array_keys(config('roles', [])));
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6',
-            'role' => 'required|string|in:admin,user',
+            'role' => 'required|string|in:' . $allowedRoles,
         ]);
 
         $this->userService->updateUser($user, $data);
@@ -72,8 +74,9 @@ class UserController extends Controller
 
     public function updateRole(Request $request, User $user)
     {
+        $allowedRoles = implode(',', array_keys(config('roles', [])));
         $data = $request->validate([
-            'role' => 'required|string|in:admin,user',
+            'role' => 'required|string|in:' . $allowedRoles,
         ]);
 
         if (auth()->id() === $user->id) {

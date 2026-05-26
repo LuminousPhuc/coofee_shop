@@ -32,8 +32,9 @@
                                 onchange="this.form.submit()" 
                                 style="background: transparent; border: 1px solid var(--border); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--text-main); font-size: 0.75rem; cursor: pointer; {{ $user->role === 'admin' ? 'border-color: #818cf8; color: #818cf8;' : '' }}"
                                 {{ auth()->id() === $user->id ? 'disabled' : '' }}>
-                            <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>USER</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>ADMIN</option>
+                            @foreach(config('roles', []) as $key => $label)
+                                <option value="{{ $key }}" {{ $user->role === $key ? 'selected' : '' }}>{{ strtoupper($label) }}</option>
+                            @endforeach
                         </select>
                     </form>
                 </td>

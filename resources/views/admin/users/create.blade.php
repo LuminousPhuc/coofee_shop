@@ -26,8 +26,9 @@
             <div class="form-group">
                 <label for="role">System Role</label>
                 <select name="role" id="role" required>
-                    <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>User</option>
-                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Administrator</option>
+                    @foreach(config('roles', []) as $key => $label)
+                        <option value="{{ $key }}" {{ old('role') === $key ? 'selected' : '' }}>{{ ucfirst($label) }}</option>
+                    @endforeach
                 </select>
                 @error('role') <p class="error-text">{{ $message }}</p> @enderror
             </div>
