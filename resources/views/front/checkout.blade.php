@@ -397,14 +397,44 @@
 
                 {{-- Địa chỉ --}}
                 <div class="form-field">
-                    <label class="form-label" for="customer_address">
+                    <label class="form-label">
                         Địa chỉ giao hàng <span class="required-dot"></span>
                     </label>
-                    <textarea name="customer_address" id="customer_address" rows="3"
-                        class="form-input @error('customer_address') is-invalid @enderror">{{ old('customer_address') }}</textarea>
+                    
+                    <div id="checkout-address-selector-container" class="vn-address-selector-container">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Tỉnh / Thành</label>
+                                <select class="province-select form-input" required style="width: 100%;">
+                                    <option value="">-- Chọn Tỉnh / Thành --</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quận / Huyện</label>
+                                <select class="district-select form-input" required disabled style="width: 100%;">
+                                    <option value="">-- Chọn Quận / Huyện --</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Phường / Xã</label>
+                                <select class="ward-select form-input" required disabled style="width: 100%;">
+                                    <option value="">-- Chọn Phường / Xã --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem;">
+                            <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Số nhà, tên đường</label>
+                            <input type="text" class="street-input form-input" placeholder="Số nhà, tên đường" required style="width: 100%;">
+                        </div>
+                        
+                        <textarea name="customer_address" id="customer_address" rows="3"
+                            class="form-input hidden-address-input @error('customer_address') is-invalid @enderror" 
+                            style="display: none;">{{ old('customer_address') }}</textarea>
+                    </div>
+
                     <div class="field-error @error('customer_address') visible @enderror" id="err_address">
                         <svg style="width:12px;height:12px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2.5;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <span>@error('customer_address'){{ $message }}@else Vui lòng nhập địa chỉ giao hàng @enderror</span>
+                        <span>@error('customer_address'){{ $message }}@else Vui lòng chọn và nhập địa chỉ giao hàng hợp lệ @enderror</span>
                     </div>
                 </div>
 
@@ -479,7 +509,7 @@
         {
             input: document.getElementById('customer_address'),
             error: document.getElementById('err_address'),
-            validate: (v) => v.trim().length >= 10 ? null : 'Vui lòng nhập địa chỉ giao hàng chi tiết hơn'
+            validate: (v) => v.trim().length >= 10 ? null : 'Vui lòng nhập đầy đủ địa chỉ nhận hàng (bao gồm Tỉnh/Thành, Quận/Huyện, Xã/Phường, Số nhà/Đường)'
         }
     ];
 
@@ -499,6 +529,161 @@
     const nameInput = document.getElementById('customer_name');
     const phoneInput = document.getElementById('customer_phone');
     const addressInput = document.getElementById('customer_address');
+    const selectorContainer = document.getElementById('checkout-address-selector-container');
+
+    // Vietnam location API helper function
+    function initVietnamAddressSelector(container, initialAddress = '') {
+        const provinceSelect = container.querySelector('.province-select');
+        const districtSelect = container.querySelector('.district-select');
+        const wardSelect = container.querySelector('.ward-select');
+        const streetInput = container.querySelector('.street-input');
+        const hiddenInput = container.querySelector('.hidden-address-input');
+
+        let parsedAddress = { street: '', ward: '', district: '', province: '' };
+
+        if (initialAddress) {
+            const parts = initialAddress.split(',').map(p => p.trim());
+            if (parts.length >= 4) {
+                parsedAddress.province = parts[parts.length - 1];
+                parsedAddress.district = parts[parts.length - 2];
+                parsedAddress.ward = parts[parts.length - 3];
+                parsedAddress.street = parts.slice(0, parts.length - 3).join(', ');
+            } else {
+                parsedAddress.street = initialAddress;
+            }
+        }
+
+        streetInput.value = parsedAddress.street;
+
+        // Fetch Provinces
+        fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
+            .then(res => res.json())
+            .then(response => {
+                if (response.error === 0) {
+                    provinceSelect.innerHTML = '<option value="">-- Chọn Tỉnh / Thành --</option>';
+                    response.data.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = p.name;
+                        provinceSelect.appendChild(option);
+                    });
+
+                    if (parsedAddress.province) {
+                        const matchedProvince = response.data.find(p => 
+                            p.name.toLowerCase().includes(parsedAddress.province.toLowerCase()) ||
+                            parsedAddress.province.toLowerCase().includes(p.name.toLowerCase())
+                        );
+                        if (matchedProvince) {
+                            provinceSelect.value = matchedProvince.id;
+                            loadDistricts(matchedProvince.id, parsedAddress.district, parsedAddress.ward);
+                        }
+                    }
+                }
+            });
+
+        provinceSelect.addEventListener('change', function() {
+            const provinceId = this.value;
+            districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+            districtSelect.disabled = true;
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+            wardSelect.disabled = true;
+
+            if (provinceId) {
+                loadDistricts(provinceId);
+            }
+            updateCombinedAddress();
+        });
+
+        districtSelect.addEventListener('change', function() {
+            const districtId = this.value;
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+            wardSelect.disabled = true;
+
+            if (districtId) {
+                loadWards(districtId);
+            }
+            updateCombinedAddress();
+        });
+
+        wardSelect.addEventListener('change', updateCombinedAddress);
+        streetInput.addEventListener('input', updateCombinedAddress);
+
+        function loadDistricts(provinceId, targetDistrict = '', targetWard = '') {
+            fetch(`https://esgoo.net/api-tinhthanh/2/${provinceId}.htm`)
+                .then(res => res.json())
+                .then(response => {
+                    if (response.error === 0) {
+                        districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+                        response.data.forEach(d => {
+                            const option = document.createElement('option');
+                            option.value = d.id;
+                            option.textContent = d.name;
+                            districtSelect.appendChild(option);
+                        });
+                        districtSelect.disabled = false;
+
+                        if (targetDistrict) {
+                            const matchedDistrict = response.data.find(d => 
+                                d.name.toLowerCase().includes(targetDistrict.toLowerCase()) ||
+                                targetDistrict.toLowerCase().includes(d.name.toLowerCase())
+                            );
+                            if (matchedDistrict) {
+                                districtSelect.value = matchedDistrict.id;
+                                loadWards(matchedDistrict.id, targetWard);
+                            }
+                        }
+                    }
+                });
+        }
+
+        function loadWards(districtId, targetWard = '') {
+            fetch(`https://esgoo.net/api-tinhthanh/3/${districtId}.htm`)
+                .then(res => res.json())
+                .then(response => {
+                    if (response.error === 0) {
+                        wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+                        response.data.forEach(w => {
+                            const option = document.createElement('option');
+                            option.value = w.id;
+                            option.textContent = w.name;
+                            wardSelect.appendChild(option);
+                        });
+                        wardSelect.disabled = false;
+
+                        if (targetWard) {
+                            const matchedWard = response.data.find(w => 
+                                w.name.toLowerCase().includes(targetWard.toLowerCase()) ||
+                                targetWard.toLowerCase().includes(w.name.toLowerCase())
+                            );
+                            if (matchedWard) {
+                                wardSelect.value = matchedWard.id;
+                            }
+                        }
+                    }
+                    updateCombinedAddress();
+                });
+        }
+
+        function updateCombinedAddress() {
+            const checkedRadio = document.querySelector('.address-radio-input:checked');
+            if (checkedRadio && checkedRadio.value !== 'new') {
+                return;
+            }
+
+            const street = streetInput.value.trim();
+            const wardText = wardSelect.options[wardSelect.selectedIndex]?.text || '';
+            const districtText = districtSelect.options[districtSelect.selectedIndex]?.text || '';
+            const provinceText = provinceSelect.options[provinceSelect.selectedIndex]?.text || '';
+
+            if (street && wardSelect.value && districtSelect.value && provinceSelect.value) {
+                hiddenInput.value = `${street}, ${wardText}, ${districtText}, ${provinceText}`;
+            } else {
+                hiddenInput.value = '';
+            }
+
+            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
 
     function updateFieldsFromSelectedRadio(force = false) {
         const checkedRadio = document.querySelector('.address-radio-input:checked');
@@ -508,26 +693,44 @@
             const address = checkedRadio.getAttribute('data-address');
             
             if (checkedRadio.value !== 'new') {
+                if (selectorContainer) selectorContainer.style.display = 'none';
                 if (force || ((nameInput.value.trim() === '' || nameInput.value.trim() === "{{ auth()->user()->name ?? '' }}") && phoneInput.value.trim() === '' && addressInput.value.trim() === '')) {
                     nameInput.value = name;
                     phoneInput.value = phone;
                     addressInput.value = address;
                     fields.forEach(clearError);
                 }
-            } else if (force) {
-                nameInput.value = "{{ auth()->user()->name ?? '' }}";
-                phoneInput.value = "";
-                addressInput.value = "";
-                fields.forEach(clearError);
+            } else {
+                if (selectorContainer) selectorContainer.style.display = 'block';
+                if (force) {
+                    nameInput.value = "{{ auth()->user()->name ?? '' }}";
+                    phoneInput.value = "";
+                    addressInput.value = "";
+                    
+                    const pSel = selectorContainer.querySelector('.province-select');
+                    const dSel = selectorContainer.querySelector('.district-select');
+                    const wSel = selectorContainer.querySelector('.ward-select');
+                    const sInp = selectorContainer.querySelector('.street-input');
+                    if (pSel) pSel.value = "";
+                    if (dSel) { dSel.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>'; dSel.disabled = true; }
+                    if (wSel) { wSel.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>'; wSel.disabled = true; }
+                    if (sInp) sInp.value = "";
+                    
+                    fields.forEach(clearError);
+                }
             }
         }
+    }
+
+    // Initialize address selector on DOM ready
+    if (selectorContainer) {
+        initVietnamAddressSelector(selectorContainer, addressInput.value);
     }
 
     if (addressRadios.length > 0) {
         addressRadios.forEach(radio => {
             radio.addEventListener('change', () => updateFieldsFromSelectedRadio(true));
         });
-        // Initial load check
         updateFieldsFromSelectedRadio();
     }
 
@@ -556,7 +759,6 @@
         });
         if (!valid) {
             e.preventDefault();
-            // Scroll to first error
             const firstErr = form.querySelector('.is-invalid');
             if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }

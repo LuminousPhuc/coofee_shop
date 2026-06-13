@@ -17,6 +17,10 @@ class CheckoutController extends Controller
 {
     public function index()
     {
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Để thanh toán, bạn cần đăng nhập.');
+        }
+
         $cart = $this->getCart();
         if (empty($cart)) return redirect()->route('front.home')->with('error', 'Giỏ hàng trống.');
 
@@ -60,6 +64,10 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Để thanh toán, bạn cần đăng nhập.');
+        }
+
         $data = $request->validate([
             'customer_name'    => 'required|string|max:255',
             'customer_email'   => 'required|email|max:255',

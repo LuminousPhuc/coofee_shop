@@ -1,9 +1,24 @@
 @extends('layouts.app')
 @section('content')
 
-    {{-- Banner Section --}}
-    <div style="border-radius: 1.5rem; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 3rem; width: 100%;">
-        <img src="{{ asset('img/banner/banner2.png') }}" alt="Mono Coffee Banner" style="width: 100%; display: block; max-height: 420px; object-fit: cover;">
+    {{-- Banner Section (Carousel) --}}
+    <div style="border-radius: 1.5rem; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 3rem; width: 100%; position: relative; height: 420px; background: #000;">
+        <div class="banner-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease-in-out;">
+            <img src="{{ asset('img/banner/banner.png') }}" alt="Mono Coffee Banner 1" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        </div>
+        <div class="banner-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease-in-out;">
+            <img src="{{ asset('img/banner/banner2.png') }}" alt="Mono Coffee Banner 2" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        </div>
+        <div class="banner-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease-in-out;">
+            <img src="{{ asset('img/banner/home1.jpg') }}" alt="Mono Coffee Banner 3" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        </div>
+        
+        {{-- Navigation dots --}}
+        <div style="position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; z-index: 10;">
+            <span class="banner-dot" onclick="currentSlide(0)" style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; border: 1.5px solid white;"></span>
+            <span class="banner-dot" onclick="currentSlide(1)" style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; border: 1.5px solid white;"></span>
+            <span class="banner-dot" onclick="currentSlide(2)" style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; border: 1.5px solid white;"></span>
+        </div>
     </div>
 
     {{-- Bestsellers Section --}}
@@ -70,3 +85,64 @@
     @endif
 
 @endsection
+
+@push('scripts')
+<script>
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.banner-slide');
+    const dots = document.querySelectorAll('.banner-dot');
+    let slideInterval;
+
+    function showSlide(index) {
+        if (slides.length === 0) return;
+        if (index >= slides.length) currentSlideIndex = 0;
+        else if (index < 0) currentSlideIndex = slides.length - 1;
+        else currentSlideIndex = index;
+
+        slides.forEach((slide, i) => {
+            if (i === currentSlideIndex) {
+                slide.style.opacity = '1';
+                slide.style.zIndex = '1';
+                if (dots[i]) {
+                    dots[i].style.background = 'var(--primary)';
+                    dots[i].style.borderColor = 'var(--primary)';
+                    dots[i].style.width = '24px';
+                    dots[i].style.borderRadius = '6px';
+                }
+            } else {
+                slide.style.opacity = '0';
+                slide.style.zIndex = '0';
+                if (dots[i]) {
+                    dots[i].style.background = 'rgba(255,255,255,0.4)';
+                    dots[i].style.borderColor = 'white';
+                    dots[i].style.width = '10px';
+                    dots[i].style.borderRadius = '50%';
+                }
+            }
+        });
+    }
+
+    function nextSlide() {
+        showSlide(currentSlideIndex + 1);
+    }
+
+    function currentSlide(index) {
+        showSlide(index);
+        resetInterval();
+    }
+
+    function startInterval() {
+        slideInterval = setInterval(nextSlide, 4000);
+    }
+
+    function resetInterval() {
+        clearInterval(slideInterval);
+        startInterval();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        showSlide(0);
+        startInterval();
+    });
+</script>
+@endpush

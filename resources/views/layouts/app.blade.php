@@ -30,7 +30,7 @@
             --radius-lg: 1rem;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Be Vietnam Pro',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; min-height:100vh; -webkit-font-smoothing:antialiased; }
+        body { font-family:'Be Vietnam Pro',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; min-height:100vh; -webkit-font-smoothing:antialiased; display: flex; flex-direction: column; }
 
         /* ====== NAVBAR ====== */
         nav {
@@ -152,7 +152,7 @@
 
         /* ====== LAYOUT ====== */
         .container { max-width:1200px; margin:0 auto; padding:2.5rem 2rem; }
-        .main-content { padding-top:1.5rem; }
+        .main-content { padding-top:1.5rem; flex-grow: 1; width: 100%; }
 
         /* ====== ADMIN PANEL BAR ====== */
         .admin-top-bar {
@@ -416,7 +416,7 @@
         footer {
             background:var(--bg-card);
             border-top:1px solid var(--border);
-            margin-top:5rem;
+            margin-top: auto;
             padding:3rem 0;
         }
         .footer-inner {

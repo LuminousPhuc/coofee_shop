@@ -30,6 +30,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Shared Protected Routes
 Route::middleware(['role:admin,user'])->group(function () {
     Route::get('/info', [DashboardController::class, 'index'])->name('dashboard');
+    Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
     Route::post('/addresses', [UserAddressController::class, 'store'])->name('addresses.store');
     Route::put('/addresses/{address}', [UserAddressController::class, 'update'])->name('addresses.update');
     Route::delete('/addresses/{address}', [UserAddressController::class, 'destroy'])->name('addresses.destroy');
@@ -60,6 +61,9 @@ Route::get('/all-products', [HomeController::class, 'shop'])->name('front.shop')
 
 // All bestsellers page
 Route::get('/bestsellers', [HomeController::class, 'bestsellers'])->name('front.bestsellers');
+
+// About us
+Route::get('/about', [HomeController::class, 'about'])->name('front.about');
 
 // Product detail
 Route::get('/product/{slug}', [HomeController::class, 'show'])->name('front.product.show');

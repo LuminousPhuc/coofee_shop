@@ -182,6 +182,9 @@
     .profile-grid { grid-template-columns: 1fr; }
     .stats-row { grid-template-columns: repeat(2, 1fr); }
 }
+.about-row:hover {
+    background: rgba(194,65,12,0.03) !important;
+}
 </style>
 
 <div class="profile-grid">
@@ -225,6 +228,10 @@
                 Quản trị hệ thống
             </a>
             @endif
+            <a href="{{ route('front.about') }}" class="profile-nav-item">
+                <svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                Về chúng tôi
+            </a>
             <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="profile-nav-item" style="color:#ef4444;">
                 <svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Đăng xuất
@@ -255,14 +262,23 @@
 
             {{-- Account Info --}}
             <div class="profile-section">
-                <div class="profile-section-header">
-                    <svg style="width:17px;height:17px;fill:none;stroke:var(--primary);stroke-width:2.2;" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <h2 class="profile-section-title">Thông tin tài khoản</h2>
+                <div class="profile-section-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <svg style="width:17px;height:17px;fill:none;stroke:var(--primary);stroke-width:2.2;" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <h2 class="profile-section-title">Thông tin tài khoản</h2>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-xs" id="btn-toggle-edit" onclick="toggleEditProfile()">Sửa thông tin</button>
                 </div>
-                <div class="profile-section-body" style="padding: 0 1.5rem;">
+                
+                {{-- View Mode --}}
+                <div class="profile-section-body" id="profile-info-display" style="padding: 0 1.5rem;">
                     <div class="info-row">
                         <span class="info-label">Họ và tên</span>
                         <span class="info-value">{{ $user->name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại</span>
+                        <span class="info-value">{{ $user->phone ?? 'Chưa cập nhật' }}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Email</span>
@@ -278,6 +294,48 @@
                         <span class="info-label">Ngày tham gia</span>
                         <span class="info-value">{{ $user->created_at->format('d/m/Y') }}</span>
                     </div>
+                </div>
+
+                {{-- Edit Mode --}}
+                <div class="profile-section-body" id="profile-info-edit" style="display: none; padding: 1.5rem;">
+                    <form action="{{ route('profile.update') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="form-group">
+                            <label for="profile_name">Họ và tên</label>
+                            <input type="text" name="name" id="profile_name" value="{{ old('name', $user->name) }}" required>
+                            @error('name')
+                                <span class="error-text">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label for="profile_phone">Số điện thoại</label>
+                            <input type="text" name="phone" id="profile_phone" value="{{ old('phone', $user->phone) }}" placeholder="Nhập số điện thoại">
+                            @error('phone')
+                                <span class="error-text">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div style="border-top: 1px solid var(--border); margin: 1.5rem 0; padding-top: 1rem;">
+                            <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.5px;">Thay đổi mật khẩu (Để trống nếu không đổi)</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="profile_password">Mật khẩu mới</label>
+                                    <input type="password" name="password" id="profile_password" placeholder="Mật khẩu mới (ít nhất 6 ký tự)">
+                                    @error('password')
+                                        <span class="error-text">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="profile_password_confirmation">Xác nhận mật khẩu mới</label>
+                                    <input type="password" name="password_confirmation" id="profile_password_confirmation" placeholder="Xác nhận mật khẩu mới">
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary btn-sm">Cập nhật</button>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="toggleEditProfile()">Hủy</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -364,9 +422,32 @@
                                     <input type="text" name="recipient_phone" required placeholder="Số điện thoại">
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label style="font-size: 0.7rem;">Địa chỉ chi tiết</label>
-                                <textarea name="address_line" required placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..." style="min-height: 80px;"></textarea>
+                            <div class="vn-address-selector-container">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem;">Tỉnh / Thành phố</label>
+                                        <select class="province-select" required style="width: 100%;">
+                                            <option value="">-- Chọn Tỉnh / Thành --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem;">Quận / Huyện</label>
+                                        <select class="district-select" required disabled style="width: 100%;">
+                                            <option value="">-- Chọn Quận / Huyện --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem;">Phường / Xã</label>
+                                        <select class="ward-select" required disabled style="width: 100%;">
+                                            <option value="">-- Chọn Phường / Xã --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.7rem;">Số nhà, tên đường</label>
+                                    <input type="text" class="street-input" placeholder="Số nhà, tên đường" required style="width: 100%;">
+                                </div>
+                                <input type="hidden" name="address_line" class="hidden-address-input" required>
                             </div>
                             <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
                                 <input type="checkbox" name="is_default" id="is_default" value="1" style="width: auto; cursor: pointer;">
@@ -426,9 +507,32 @@
                                                     <input type="text" name="recipient_phone" value="{{ $address->recipient_phone }}" required>
                                                 </div>
                                             </div>
-                                            <div class="form-group">
-                                                <label style="font-size: 0.7rem;">Địa chỉ chi tiết</label>
-                                                <textarea name="address_line" required style="min-height: 80px;">{{ $address->address_line }}</textarea>
+                                            <div class="vn-address-selector-container" data-initial="{{ $address->address_line }}">
+                                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                                                    <div class="form-group" style="margin-bottom: 0;">
+                                                        <label style="font-size: 0.7rem;">Tỉnh / Thành phố</label>
+                                                        <select class="province-select" required style="width: 100%;">
+                                                            <option value="">-- Chọn Tỉnh / Thành --</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group" style="margin-bottom: 0;">
+                                                        <label style="font-size: 0.7rem;">Quận / Huyện</label>
+                                                        <select class="district-select" required disabled style="width: 100%;">
+                                                            <option value="">-- Chọn Quận / Huyện --</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group" style="margin-bottom: 0;">
+                                                        <label style="font-size: 0.7rem;">Phường / Xã</label>
+                                                        <select class="ward-select" required disabled style="width: 100%;">
+                                                            <option value="">-- Chọn Phường / Xã --</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label style="font-size: 0.7rem;">Số nhà, tên đường</label>
+                                                    <input type="text" class="street-input" placeholder="Số nhà, tên đường" required style="width: 100%;">
+                                                </div>
+                                                <input type="hidden" name="address_line" class="hidden-address-input" value="{{ $address->address_line }}" required>
                                             </div>
                                             <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
                                                 <input type="checkbox" name="is_default" id="is_default_{{ $address->id }}" value="1" {{ $address->is_default ? 'checked' : '' }} style="width: auto; cursor: pointer;">
@@ -457,3 +561,183 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleEditProfile() {
+        const displayDiv = document.getElementById('profile-info-display');
+        const editDiv = document.getElementById('profile-info-edit');
+        const btnToggle = document.getElementById('btn-toggle-edit');
+        
+        if (editDiv.style.display === 'none') {
+            editDiv.style.display = 'block';
+            displayDiv.style.display = 'none';
+            btnToggle.textContent = 'Quay lại';
+        } else {
+            editDiv.style.display = 'none';
+            displayDiv.style.display = 'block';
+            btnToggle.textContent = 'Sửa thông tin';
+        }
+    }
+
+    @if($errors->has('name') || $errors->has('phone') || $errors->has('password'))
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleEditProfile();
+        });
+    @endif
+
+    // Vietnam location API helper function
+    function initVietnamAddressSelector(container, initialAddress = '') {
+        const provinceSelect = container.querySelector('.province-select');
+        const districtSelect = container.querySelector('.district-select');
+        const wardSelect = container.querySelector('.ward-select');
+        const streetInput = container.querySelector('.street-input');
+        const hiddenInput = container.querySelector('.hidden-address-input');
+
+        let parsedAddress = { street: '', ward: '', district: '', province: '' };
+
+        if (initialAddress) {
+            const parts = initialAddress.split(',').map(p => p.trim());
+            if (parts.length >= 4) {
+                parsedAddress.province = parts[parts.length - 1];
+                parsedAddress.district = parts[parts.length - 2];
+                parsedAddress.ward = parts[parts.length - 3];
+                parsedAddress.street = parts.slice(0, parts.length - 3).join(', ');
+            } else {
+                parsedAddress.street = initialAddress;
+            }
+        }
+
+        streetInput.value = parsedAddress.street;
+
+        // Fetch Provinces
+        fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
+            .then(res => res.json())
+            .then(response => {
+                if (response.error === 0) {
+                    provinceSelect.innerHTML = '<option value="">-- Chọn Tỉnh / Thành --</option>';
+                    response.data.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = p.name;
+                        provinceSelect.appendChild(option);
+                    });
+
+                    if (parsedAddress.province) {
+                        const matchedProvince = response.data.find(p => 
+                            p.name.toLowerCase().includes(parsedAddress.province.toLowerCase()) ||
+                            parsedAddress.province.toLowerCase().includes(p.name.toLowerCase())
+                        );
+                        if (matchedProvince) {
+                            provinceSelect.value = matchedProvince.id;
+                            loadDistricts(matchedProvince.id, parsedAddress.district, parsedAddress.ward);
+                        }
+                    }
+                }
+            });
+
+        provinceSelect.addEventListener('change', function() {
+            const provinceId = this.value;
+            districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+            districtSelect.disabled = true;
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+            wardSelect.disabled = true;
+
+            if (provinceId) {
+                loadDistricts(provinceId);
+            }
+            updateCombinedAddress();
+        });
+
+        districtSelect.addEventListener('change', function() {
+            const districtId = this.value;
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+            wardSelect.disabled = true;
+
+            if (districtId) {
+                loadWards(districtId);
+            }
+            updateCombinedAddress();
+        });
+
+        wardSelect.addEventListener('change', updateCombinedAddress);
+        streetInput.addEventListener('input', updateCombinedAddress);
+
+        function loadDistricts(provinceId, targetDistrict = '', targetWard = '') {
+            fetch(`https://esgoo.net/api-tinhthanh/2/${provinceId}.htm`)
+                .then(res => res.json())
+                .then(response => {
+                    if (response.error === 0) {
+                        districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+                        response.data.forEach(d => {
+                            const option = document.createElement('option');
+                            option.value = d.id;
+                            option.textContent = d.name;
+                            districtSelect.appendChild(option);
+                        });
+                        districtSelect.disabled = false;
+
+                        if (targetDistrict) {
+                            const matchedDistrict = response.data.find(d => 
+                                d.name.toLowerCase().includes(targetDistrict.toLowerCase()) ||
+                                targetDistrict.toLowerCase().includes(d.name.toLowerCase())
+                            );
+                            if (matchedDistrict) {
+                                districtSelect.value = matchedDistrict.id;
+                                loadWards(matchedDistrict.id, targetWard);
+                            }
+                        }
+                    }
+                });
+        }
+
+        function loadWards(districtId, targetWard = '') {
+            fetch(`https://esgoo.net/api-tinhthanh/3/${districtId}.htm`)
+                .then(res => res.json())
+                .then(response => {
+                    if (response.error === 0) {
+                        wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+                        response.data.forEach(w => {
+                            const option = document.createElement('option');
+                            option.value = w.id;
+                            option.textContent = w.name;
+                            wardSelect.appendChild(option);
+                        });
+                        wardSelect.disabled = false;
+
+                        if (targetWard) {
+                            const matchedWard = response.data.find(w => 
+                                w.name.toLowerCase().includes(targetWard.toLowerCase()) ||
+                                targetWard.toLowerCase().includes(w.name.toLowerCase())
+                            );
+                            if (matchedWard) {
+                                wardSelect.value = matchedWard.id;
+                            }
+                        }
+                    }
+                    updateCombinedAddress();
+                });
+        }
+
+        function updateCombinedAddress() {
+            const street = streetInput.value.trim();
+            const wardText = wardSelect.options[wardSelect.selectedIndex]?.text || '';
+            const districtText = districtSelect.options[districtSelect.selectedIndex]?.text || '';
+            const provinceText = provinceSelect.options[provinceSelect.selectedIndex]?.text || '';
+
+            if (street && wardSelect.value && districtSelect.value && provinceSelect.value) {
+                hiddenInput.value = `${street}, ${wardText}, ${districtText}, ${provinceText}`;
+            } else {
+                hiddenInput.value = '';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.vn-address-selector-container').forEach(container => {
+            const initial = container.getAttribute('data-initial') || '';
+            initVietnamAddressSelector(container, initial);
+        });
+    });
+</script>
+@endpush

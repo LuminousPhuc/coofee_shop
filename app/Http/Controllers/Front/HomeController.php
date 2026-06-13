@@ -86,4 +86,12 @@ class HomeController extends Controller
 
         return view('front.product_detail', compact('product', 'toppings'));
     }
+
+    /**
+     * About Us page.
+     */
+    public function about()
+    {
+        return view('front.about');
+    }
 }
