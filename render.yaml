@@ -22,7 +22,7 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: APP_URL
-        fromRenderService:
+        fromService:
           type: web
           name: coffee-shop-app
           property: host
